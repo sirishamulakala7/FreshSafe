@@ -27,7 +27,72 @@ const surveyResults = [
   { label: "Know how produce was grown", value: 42, color: "sage" },
 ];
 
-const complaintStorageKey = "freshsafe-complaints";
+const produceGuides = [
+  {
+    name: "Apple",
+    icon: "🍎",
+    wash: "Rinse under clean running water and rub the whole surface with your hands.",
+    preparation: "Remove the stem and any bruised spots with a clean knife.",
+    peeling: "Peeling is optional. The skin is edible; peel it if you prefer.",
+    storage: "Keep apples refrigerated to help them stay fresh longer.",
+  },
+  {
+    name: "Banana",
+    icon: "🍌",
+    wash: "Rinse the unpeeled banana under clean running water before cutting or peeling it.",
+    preparation: "Use clean hands and a clean knife, especially if slicing it.",
+    peeling: "Peeling is useful for eating; the peel is generally not eaten.",
+    storage: "Store at room temperature until ripe. Refrigerate ripe bananas to slow further ripening; the peel may darken.",
+  },
+  {
+    name: "Grapes",
+    icon: "🍇",
+    wash: "Rinse grapes under clean running water just before eating.",
+    preparation: "Remove damaged grapes and drain or pat the rest dry with a clean towel.",
+    peeling: "Peeling is optional and usually unnecessary.",
+    storage: "Refrigerate unwashed grapes in a ventilated container and wash them before serving.",
+  },
+  {
+    name: "Mango",
+    icon: "🥭",
+    wash: "Rinse and gently rub the whole mango under clean running water before cutting.",
+    preparation: "Use a clean knife and cutting board. Cut around the large pit.",
+    peeling: "Peeling is useful because the skin is usually not eaten.",
+    storage: "Ripen at room temperature, then refrigerate when ripe. Keep cut mango covered in the refrigerator.",
+  },
+  {
+    name: "Tomato",
+    icon: "🍅",
+    wash: "Rinse under clean running water and gently rub the surface before slicing.",
+    preparation: "Remove the stem with a clean knife and use a clean cutting board.",
+    peeling: "Peeling is optional; the skin is edible.",
+    storage: "Store whole ripe tomatoes at room temperature for best flavor, away from direct sunlight. Refrigerate cut tomatoes.",
+  },
+  {
+    name: "Spinach",
+    icon: "🥬",
+    wash: "Rinse leaves thoroughly under clean running water, separating them so water reaches all surfaces.",
+    preparation: "Remove wilted leaves and dry with a clean towel or salad spinner.",
+    peeling: "Peeling does not apply; eat the leaves whole or chopped.",
+    storage: "Refrigerate dry leaves in a clean container or bag. Wash just before use.",
+  },
+  {
+    name: "Cabbage",
+    icon: "🥬",
+    wash: "Rinse the outside under clean running water. Remove outer leaves, then rinse again before cutting.",
+    preparation: "Use a clean knife and board to cut or shred it.",
+    peeling: "Peeling does not apply. Removing outer leaves is useful if they are damaged or dirty.",
+    storage: "Refrigerate whole cabbage. Keep cut cabbage covered in the refrigerator.",
+  },
+  {
+    name: "Carrot",
+    icon: "🥕",
+    wash: "Scrub the carrot under clean running water, especially if it is visibly dirty.",
+    preparation: "Trim the ends with a clean knife. Scrub with a clean produce brush if needed.",
+    peeling: "Peeling is optional; scrubbing well is usually enough.",
+    storage: "Refrigerate in a clean bag or container. Keep away from excess moisture.",
+  },
+];
 
 function SectionHeading({ eyebrow, title, description, centered = false }) {
   return (
@@ -40,63 +105,7 @@ function SectionHeading({ eyebrow, title, description, centered = false }) {
 }
 
 function App() {
-  const [reportState, setReportState] = useState(() => {
-    try {
-      const savedComplaints = window.localStorage.getItem(complaintStorageKey);
-      const complaints = savedComplaints ? JSON.parse(savedComplaints) : [];
-      const validComplaints = Array.isArray(complaints) && complaints.every(
-        (complaint) =>
-          complaint &&
-          typeof complaint.id === "string" &&
-          typeof complaint.type === "string" &&
-          typeof complaint.details === "string" &&
-          typeof complaint.createdAt === "string",
-      );
-
-      if (!validComplaints) {
-        throw new Error("Saved complaints have an invalid format.");
-      }
-
-      return { complaints, notice: "", noticeType: "" };
-    } catch (error) {
-      console.error("Could not load saved complaints.", error);
-      return {
-        complaints: [],
-        notice: "Saved complaints could not be loaded from this browser.",
-        noticeType: "error",
-      };
-    }
-  });
-
-  function handleReportSubmit(event) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const formData = new FormData(form);
-    const complaint = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      type: formData.get("issue-type"),
-      details: formData.get("issue-details"),
-      createdAt: new Date().toISOString(),
-    };
-    const complaints = [...reportState.complaints, complaint];
-
-    try {
-      window.localStorage.setItem(complaintStorageKey, JSON.stringify(complaints));
-      setReportState({
-        complaints,
-        notice: "Your complaint was saved in this browser.",
-        noticeType: "success",
-      });
-      form.reset();
-    } catch (error) {
-      console.error("Could not save complaint.", error);
-      setReportState((current) => ({
-        ...current,
-        notice: "Your complaint could not be saved. Please try again.",
-        noticeType: "error",
-      }));
-    }
-  }
+  const [selectedProduce, setSelectedProduce] = useState(null);
 
   return (
     <>
@@ -108,7 +117,7 @@ function App() {
         <nav className="main-nav" aria-label="Main navigation">
           <a href="#home">Home</a>
           <a href="#guide">Food Safety Guide</a>
-          <a href="#report">Report an Issue</a>
+          <a href="#consume-safely">How to Consume Safely</a>
           <a href="#farmers">Farmer Corner</a>
           <a href="#survey">Survey Results</a>
         </nav>
@@ -171,65 +180,53 @@ function App() {
                 <div className="tip-card-top"><span className="tip-number">{tip.number}</span><span className="tip-icon">{tip.icon}</span></div>
                 <h3>{tip.title}</h3>
                 <p>{tip.text}</p>
-                <a className="card-link" href="#report">Learn more <span aria-hidden="true">↗</span></a>
+                <a className="card-link" href="#consume-safely">Learn more <span aria-hidden="true">↗</span></a>
               </article>
             ))}
           </div>
           <p className="source-note">Good to know: Follow local food-safety guidance for specific advice on washing and storing produce.</p>
         </section>
 
-        <section className="report-section section-pad" id="report">
-          <div className="report-copy">
-            <span className="eyebrow">YOUR VOICE MATTERS</span>
-            <h2>Noticed something<br />that doesn’t feel right?</h2>
-            <p>Share a concern about the fruits or vegetables you’ve purchased. Your feedback helps bring attention to food-safety questions in your community.</p>
-            <div className="report-assurance"><span aria-hidden="true">♡</span> Saved in this browser only. Your report isn’t sent anywhere.</div>
+        <section className="consume-section section-pad" id="consume-safely">
+          <SectionHeading
+            eyebrow="FRESH PRODUCE, MADE SIMPLE"
+            title="How to Consume Safely"
+            description="Choose a fruit or vegetable for practical washing, preparation, peeling, and storage tips."
+            centered
+          />
+          <div className="produce-grid" aria-label="Choose produce for safety tips">
+            {produceGuides.map((produce) => (
+              <button
+                className={`produce-card${selectedProduce?.name === produce.name ? " selected" : ""}`}
+                type="button"
+                key={produce.name}
+                onClick={() => setSelectedProduce(produce)}
+                aria-pressed={selectedProduce?.name === produce.name}
+              >
+                <span className="produce-icon" aria-hidden="true">{produce.icon}</span>
+                <span className="produce-name">{produce.name}</span>
+                <span className="produce-card-hint">View safety tips <span aria-hidden="true">↗</span></span>
+              </button>
+            ))}
           </div>
-          <div className="report-panel">
-            <form className="report-form" onSubmit={handleReportSubmit}>
-              <label htmlFor="issue-type">What would you like to report?</label>
-              <select id="issue-type" name="issue-type" required defaultValue="">
-                <option value="" disabled>Choose a topic</option>
-                <option>Produce quality concern</option>
-                <option>Unclear product information</option>
-                <option>Something else</option>
-              </select>
-              <label htmlFor="issue-details">A few details</label>
-              <textarea id="issue-details" name="issue-details" rows="4" placeholder="Tell us what you noticed..." required />
-              <button className="button button-primary form-submit" type="submit">Submit a report <span aria-hidden="true">→</span></button>
-              {reportState.notice && (
-                <p
-                  className={`form-message ${reportState.noticeType}`}
-                  role={reportState.noticeType === "error" ? "alert" : "status"}
-                >
-                  {reportState.notice}
-                </p>
-              )}
-            </form>
-            <section className="complaint-list" aria-labelledby="complaint-list-title">
-              <div className="complaint-list-heading">
-                <h3 id="complaint-list-title">Submitted complaints</h3>
-                <span>{reportState.complaints.length}</span>
-              </div>
-              {reportState.complaints.length === 0 ? (
-                <p className="empty-complaints">No complaints submitted yet.</p>
-              ) : (
-                <div className="complaint-items">
-                  {reportState.complaints.map((complaint) => (
-                    <article className="complaint-item" key={complaint.id}>
-                      <div className="complaint-meta">
-                        <strong>{complaint.type}</strong>
-                        <time dateTime={complaint.createdAt}>
-                          {new Date(complaint.createdAt).toLocaleString()}
-                        </time>
-                      </div>
-                      <p>{complaint.details}</p>
-                    </article>
-                  ))}
+          {selectedProduce && (
+            <article className="produce-detail" aria-live="polite" aria-labelledby="produce-detail-title">
+              <div className="produce-detail-heading">
+                <span className="produce-detail-icon" aria-hidden="true">{selectedProduce.icon}</span>
+                <div>
+                  <span className="eyebrow">YOUR QUICK GUIDE</span>
+                  <h3 id="produce-detail-title">{selectedProduce.name}</h3>
                 </div>
-              )}
-            </section>
-          </div>
+              </div>
+              <dl className="produce-detail-list">
+                <div><dt>How to wash it safely</dt><dd>{selectedProduce.wash}</dd></div>
+                <div><dt>Preparation tips</dt><dd>{selectedProduce.preparation}</dd></div>
+                <div><dt>Peeling</dt><dd>{selectedProduce.peeling}</dd></div>
+                <div><dt>Storage tips</dt><dd>{selectedProduce.storage}</dd></div>
+              </dl>
+              <p className="produce-detail-note">Use clean running water for produce. Do not wash fruits or vegetables with soap, detergent, or bleach.</p>
+            </article>
+          )}
         </section>
 
         <section className="farmer-section section-pad" id="farmers">
